@@ -847,10 +847,10 @@ if (cluster.isMaster) {
 
  
  
-    https.createServer(https_options, app).on('connection', (socket) => {
-        socket.setTimeout(10000);
-    }).listen(port);
- 
+    // https.createServer(https_options, app).on('connection', (socket) => {
+    //     socket.setTimeout(10000);
+    // }).listen(port);
+    app.listen(port)
     console.log("listening");
  
     
