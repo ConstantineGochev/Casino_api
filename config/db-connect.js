@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const db = require('./database');
+const db = require('./keys');
 
 module.exports = (cb) =>{
     mongoose.connect(db.mongoURI, function (err,db) {
