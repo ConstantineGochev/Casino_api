@@ -16,9 +16,9 @@ const morgan = require('morgan')
 const session = require('express-session');
 const {SHA256} = require('crypto-js');
 const _ = require('lodash');
-const webpack = require('webpack');
-const webpackDevMiddleware =require('webpack-dev-middleware');
-const webpack_config = require('./webpack.config');
+// const webpack = require('webpack');
+// const webpackDevMiddleware =require('webpack-dev-middleware');
+// const webpack_config = require('./webpack.config');
 
 
 //json web token ?
@@ -68,7 +68,9 @@ if (cluster.isMaster) {
     // Tell express to use the body-parser middleware and to not parse extended bodies
     app.use(bodyParser.urlencoded({ extended: false }));
     app.use(bodyParser.json());
-    app.use(webpackDevMiddleware(webpack(webpack_config)))
+
+    //middleware for webpack
+    //app.use(webpackDevMiddleware(webpack(webpack_config)))
     
     const ConnectToDB = require('./config/db-connect')
     
