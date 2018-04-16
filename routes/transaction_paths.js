@@ -8,7 +8,6 @@ const mongoose = require('mongoose');
 require('../models/transactions');
 require('../models/user');
 const User = mongoose.model('user');
-
 const Transaction = mongoose.model('transaction');
 
 
@@ -613,14 +612,85 @@ module.exports = (app,UserCollection,DefCodeCollection,TransactionIdCollection) 
             })
 
                 } else if (undefined !== result['GetPlayerBalanceRequest']) {
-                    var reply = {
-                        'GetPlayerBalanceResponse': {
-                            'Balance': 9000,
-                            'ErrorCode': 1000,
-                            'ErrorMessage': 'OK'
+                    var reply;
+                    var gpb = result['GetPlayerBalanceRequest'];
+                    
+                    
+                    get_user(UserCollection,gpb,(user_found_id, user_found_name) => {
+                         
+                        // console.log(user_found_id)
+                        // console.log(user_found_name)            
+                                    
+                        if (null == user_found_id && null == user_found_name) {
+                            // greshka
+                            reply = {
+                               'GetPlayerBalanceResponse': {
+                                'Balance': null,
+                                'ErrorCode': 3000,
+                                'ErrorMessage': 'User not found'
+                                    }
+                               };
+                           save_empty_req('GetPlayerBalance',3000,'User not found')
+                               
+                                        // console.log(user_found)
+                         }else if(user_found_name == null){
+                            
+                            reply = {
+                                'GetPlayerBalanceResponse': {
+                                'Balance': null,
+                                'ErrorCode': 3102,
+                                'ErrorMessage': 'Wrong username or password'
+                                }
+                            };
+                          save_empty_req('GetPlayerBalance',3102,'Wrong username or password')
+                     
+                         } else if(user_found_id == null || user_found_id.player_id != user_found_name.player_id){
+                            reply = {
+                                'GetPlayerBalanceResponse': {
+                                'Balance': null,
+                                'ErrorCode': 3104,
+                                'ErrorMessage': 'Wrong player ID'
+                                }
+                            };
+                           save_empty_req('GetPlayerBalance',3104,'Wrong player ID')
+                            
+                         }else if(user_found_name.banned === true){
+                            reply = {
+                                'GetPlayerBalanceResponse': {
+                                'Balance': null,
+                                'ErrorCode': 3103,
+                                'ErrorMessage': 'Player is banned'
+                                }
+                            };
+                           save_empty_req('GetPlayerBalance',3103,'Player is banned')
+                            
+                         }else if(undefined === session_dc){
+                            reply = {
+                                'GetPlayerBalanceResponse': {
+                                'Balance': null,
+                                'ErrorCode': 3101,
+                                'ErrorMessage': 'Session has expired'
+                                }
+                            };
+                           save_empty_req('GetPlayerBalance',3101,'Session has expired')
+                            
+                         } else {
+                           
+                             reply = {
+                                'GetPlayerBalanceResponse': {
+                                'Balance': user_found_name.balance,                                       'ErrorCode': 1000,
+                                'ErrorMessage': 'OK'
+                                }
+                            };
+                           // console.log(user_found)                            
+                        const request = new Transaction({op: "GetPlayerBalance",err_code: '1000',msg:'OK',user:user_found_name._id})
+
+                          save_player_req(User,user_found_name._id,request);
+                            
                         }
-                    };
-                    send_reply(reply, res);
+                       send_reply(reply, res)
+
+                    });     
                 } else {
                     console.log("unhandled key[%s], nothing to do..", key);
                     send_reply({ 'Error': { 'ErrorCode': 3000, 'ErrorMessage': 'unhandled command: [' + key +']'} }, res);
