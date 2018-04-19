@@ -14,6 +14,7 @@ var cluster = require('cluster');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const _ = require('lodash');
+const cors = require('cors')
 const keys = require('./config/keys');
 const {cookie} = keys;
 
@@ -41,6 +42,8 @@ if (cluster.isMaster) {
     // Tell express to use the body-parser middleware and to not parse extended bodies
     app.use(bodyParser.urlencoded({ extended: false }));
     app.use(bodyParser.json());
+    app.use(cors())
+
     
     const ConnectToDB = require('./config/db-connect')
     
