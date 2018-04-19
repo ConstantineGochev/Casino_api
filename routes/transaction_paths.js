@@ -18,7 +18,7 @@ module.exports = (app,UserCollection,DefCodeCollection,TransactionIdCollection) 
        //console.log(req.session)
         save_def_code(DefCodeCollection,(dc)=>{
             req.session.dc = dc
-            res.send(dc)
+            res.send({"defence_code": dc})
         })
      })
     
