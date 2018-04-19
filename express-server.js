@@ -40,7 +40,7 @@ if (cluster.isMaster) {
     const app = express();
 
     // Tell express to use the body-parser middleware and to not parse extended bodies
-    app.use(bodyParser.urlencoded({ extended: false }));
+    app.use(bodyParser.urlencoded({ extended: true }));
     app.use(bodyParser.json());
     app.use(cors())
 
@@ -71,10 +71,10 @@ if (cluster.isMaster) {
 
  
  
-    // https.createServer(https_options, app).on('connection', (socket) => {
-    //     socket.setTimeout(10000);
-    // }).listen(port);
-     app.listen(port)
+    https.createServer(https_options, app).on('connection', (socket) => {
+        socket.setTimeout(10000);
+    }).listen(port);
+     //app.listen(port)
     console.log("listening");
  
     

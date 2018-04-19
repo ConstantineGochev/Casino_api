@@ -15,13 +15,30 @@ const Transaction = mongoose.model('transaction');
 module.exports = (app,UserCollection,DefCodeCollection,TransactionIdCollection) => {
 
     app.get(mainPath, (req, res) =>{
-       //console.log(req.session)
+   
         save_def_code(DefCodeCollection,(dc)=>{
-            req.session.dc = dc
-            res.send({"defence_code": dc})
-        })
+                req.session.dc = dc
+                res.send({'defence_code':dc})
+             })
      })
-    
+     //get current user
+     app.get(mainPath +'/current', (req, res) => {
+        console.log(req.query)
+        var {screenname, password} = req.query;
+        User.findOne({screenname,
+            password  
+             }).then(user => {
+                if(!user){
+                    return res.send({'msg': 'User not found'})
+                 }
+         
+                  res.send({'user': user})
+                 }).catch(err => {
+                     console.log(err)
+               })
+
+     })
+ 
 
            //post requests
     app.post(mainPath,  (req, res) => {
