@@ -1,12 +1,14 @@
 const helpers = require('../config/helpers');
 const {get_user,save_empty_req,save_player_req,send_reply,save_transfer_id,save_def_code,user_deposit,user_bet,withdraw_deposit} = helpers;
-const keys = require('../config/keys');
-const {mainPath} = keys;
+const routes = require('../config/routes');
+const {mainPath} = routes;
 var parseString = require('xml2js').parseString;
 var qs = require('querystring');
 const mongoose = require('mongoose');
 require('../models/transactions');
 require('../models/user');
+require('../models/session_balance')
+const Session_Balance = mongoose.model('session_balance')
 const User = mongoose.model('user');
 const Transaction = mongoose.model('transaction');
 
@@ -20,6 +22,9 @@ module.exports = (app,UserCollection,DefCodeCollection,TransactionIdCollection) 
                 req.session.dc = dc
                 res.send({'defence_code':dc})
              })
+            // console.log(req.session)
+            console.log('session id ? ==== %s', req.sessionID)
+             
      })
      //get current user
      app.get(mainPath +'/current', (req, res) => {
@@ -45,6 +50,8 @@ module.exports = (app,UserCollection,DefCodeCollection,TransactionIdCollection) 
       
             var body = '';
             var session_dc = req.session.dc
+
+            console.log('session id ? ==== %s', req.sessionID)
             
             req.on('data', function (data) {
                 body += data;
@@ -281,10 +288,21 @@ module.exports = (app,UserCollection,DefCodeCollection,TransactionIdCollection) 
                     var {player_id,balance, requests,_id} = user_found_name;
                     
                     
-             save_transfer_id(TransactionIdCollection, (t_id) => {
+             save_transfer_id(TransactionIdCollection, (t_id,ID) => {
                                                
-                        
-                        const request = new Transaction({op: "Withdraw",err_code: '1000',transfer_id: t_id,amount:amount,msg:'OK',user:_id})
+                     //transactions collection
+                const request = new Transaction({op: "Withdraw",err_code: '1000',transfer_id: t_id,amount:amount,msg:'OK',user:_id})
+                     //for Session balance -----
+                         
+                        const query = {session_dc: session_dc},
+                              update = {$inc:{"session_balance": -(amount)},$push:{"transactions": {_id:ID}},user:_id},
+                              options = {upsert: true, new: true, setDefaultsOnInsert: true}
+                        Session_Balance.findOneAndUpdate(query,update,options, function(err, result){
+                            if(err){
+                                console.log(err)
+                            }
+                                console.log('success')
+                        })
                         save_player_req(User,_id,request);
                         user_bet(UserCollection,player_id,t_id,amount,balance,res,wr,send_reply)
                     })
@@ -383,8 +401,17 @@ module.exports = (app,UserCollection,DefCodeCollection,TransactionIdCollection) 
                     var {player_id,balance,_id} = user_found_name
 
                     
-                    save_transfer_id(TransactionIdCollection, (t_id) => {                     
-                        
+                    save_transfer_id(TransactionIdCollection, (t_id,ID) => {                     
+                    
+                        const query = {session_dc: req.session.dc},
+                        update = {$inc:{"session_balance": amount},$push:{"transactions": {_id:ID}}},
+                        options = {upsert: true, new: true, setDefaultsOnInsert: true}
+                   Session_Balance.findOneAndUpdate(query,update,options, function(err, result){
+                        if(err){
+                          console.log(err)
+                            }
+                          console.log('success')
+                        })
                         const request = new Transaction({op: "Deposit",err_code: '1000',transfer_id: t_id,amount:amount,msg:'OK',user:_id})
 
                         save_player_req(User,_id,request);
@@ -503,7 +530,15 @@ module.exports = (app,UserCollection,DefCodeCollection,TransactionIdCollection) 
                     
              save_transfer_id(TransactionIdCollection, (t_id) => {
                                                
-                        
+                          const query = {session_id: req.session.id},
+                          update = {$inc:{"session_balance": amount},user:_id},
+                          options = {upsert: true, new: true, setDefaultsOnInsert: true}
+                     Session_Balance.findOneAndUpdate(query,update,options, function(err, result){
+                          if(err){
+                            console.log(err)
+                              }
+                            console.log('success')
+                          })
                         const request = new Transaction({op: "Refund",err_code: '1000',transfer_id: t_id,amount:amount,msg:'OK',user:_id})
                         save_player_req(User,_id,request);
                         user_deposit(UserCollection,player_id,t_id,amount,balance,res,rr,'rr',send_reply)                         
@@ -621,7 +656,7 @@ module.exports = (app,UserCollection,DefCodeCollection,TransactionIdCollection) 
              save_transfer_id(TransactionIdCollection, (t_id) => {
                                                
                         
-                        const request = new Transaction({op: "WithdrawAndDeposit",err_code: '1000',transfer_id: t_id,amount:amount,msg:'OK',user:_id})
+                        const request = new Transaction({op: "WithdrawAndDeposit",err_code: '1000',transfer_id: t_id,amount:amount - bet,msg:'OK',user:_id})
                         save_player_req(User,_id,request);
                         withdraw_deposit(UserCollection,player_id,t_id,amount,bet,balance,res,wdr,send_reply);                        
                     })

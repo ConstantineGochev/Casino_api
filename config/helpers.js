@@ -24,7 +24,7 @@ save_def_code:function(collection,callback){
     collection.insertOne({"def_code": dc}, function(err, result){
         if ( err ){
         
-         this.save_def_code(collection)
+         save_def_code(collection)
          console.log ('Defence code has dublicate: %s',err); //info about what went wrong
           } 
         if (result){
@@ -44,8 +44,8 @@ save_transfer_id:(collection,callback) =>{
             console.log ('Transfer ID has dublicate: %s',err); //info about what went wrong
           } 
         if (result){
-         //console.log ( result.ops[0].def_code );
-         callback(result.ops[0].transfer_id)
+         console.log ( result.ops[0]._id );
+         callback(result.ops[0].transfer_id,  result.ops[0]._id)
         } 
     })
 },
@@ -238,6 +238,14 @@ user_bet: (collection, id,transfer_id, bet,balance,res,op,cb) =>{
         }
     });
   },
+  getJsonFromUrl : function(query) {
+    var result = {};
+    query.split("&").forEach(function(part) {
+      var item = part.split("=");
+      result[item[0]] = decodeURIComponent(item[1]);
+    });
+    return result;
+  }
 
 }
  // generate unique defence

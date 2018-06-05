@@ -1,31 +1,34 @@
-const keys = require('../config/keys');
-const {playersPath} = keys;
+const routes = require('../config/routes');
+const {playersPath} = routes;
 const helpers = require('../config/helpers')
 const {save_player_logs} = helpers;
 const mongoose = require('mongoose');
 require('../models/user');
 const User = mongoose.model('user');
 
+
+//User operations create new user, get all users delete update
 module.exports = (app) => {
     app.get(playersPath, (req, res)=>{
-        var page_num = parseInt(req.query.page_num),
-        size = parseInt(req.query.size),
-        query = {},
-        response
-        if(page_num < 0 || page_num === 0){
-            response = {"error": true, "msg": "invalid page number shoud start at 1?!"}
-            return res.json(response);
-          }
-          query.skip = size * (page_num - 1);
-          query.limit = size;
+        // var page_num = parseInt(req.query.page_num),
+        // size = parseInt(req.query.size),
+        // query = {},
+        // response
+        // if(page_num < 0 || page_num === 0){
+        //     response = {"error": true, "msg": "invalid page number shoud start at 1?!"}
+        //     return res.json(response);
+        //   }
+        //   query.skip = size * (page_num - 1);
+        //   query.limit = size;
         User.count({}, function(err, count){
         
-            User.find({},{}, query).populate('requests').then((users) => {
+            User.find(/*{},{}, query*/).then((users) => {
                 if(err) {
-                    response = {"error":true, "msg": "Error fetching data"}
+                    response = {"msg": "Error fetching data"}
                 }
-                var total_pages = Math.ceil(count / size);
-                response = {"error": false, "data":users, "pages":total_pages}
+                var total_players = Math.ceil(count);
+                response = {"data":users, "total_players":total_players}
+        
                 res.json(response)
             }).catch((err) => {
                 console.log(err)
@@ -52,9 +55,21 @@ module.exports = (app) => {
                            return res.status(500).send({succes: false, msg: 'Opss something went wrong with the database',err})
                    }
                    save_player_logs('Player created',user.screenname,user.balance,user.password,user.player_id)
-                   res.json({succes: true, msg: 'User registered', user})
-               })
+                }).then((user) => {
+                    res.json({succes: true, msg: 'User registered', user})
+
+               }).catch((err)=>{console.log(err)})
            
+    })
+    app.get(playersPath + '/:id', (req, res) => {
+        User.findById({_id: req.params.id}).populate('requests')
+        .then((user) => {
+          res.send({"user":user})
+           
+         
+        }).catch((err) => {
+            console.log(err)
+        })
     })
 
     app.put(playersPath + '/:id', (req, res) => {

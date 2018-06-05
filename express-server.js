@@ -12,14 +12,18 @@ const xmlparser = require('express-xml-bodyparser');
 const express_json = require('express-json');
 var cluster = require('cluster');
 const mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
+
 const session = require('express-session');
 const _ = require('lodash');
 const cors = require('cors')
 const keys = require('./config/keys');
+//const debug = require('debug')('express-server');
+const morgan = require('morgan')
 const {cookie} = keys;
 
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 
  
 var https_options = {
@@ -42,12 +46,13 @@ if (cluster.isMaster) {
     // Tell express to use the body-parser middleware and to not parse extended bodies
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(bodyParser.json());
-    app.use(cors())
+    app.use(cors());
+    app.use(morgan('combined'))
 
     
     const ConnectToDB = require('./config/db-connect')
     
-    ConnectToDB(function(UserCollection,DefCodeCollection,TransactionIdCollection){
+    ConnectToDB(function(UserCollection,DefCodeCollection,TransactionIdCollection, TransactionCollection){
         console.log('connect to db invoked')
         
         //expess session
@@ -60,22 +65,25 @@ if (cluster.isMaster) {
                           resave:false,
                           cookie: { maxAge: dc_expiry_seconds }}));
 
-        
-         require('./routes/transaction_paths')(app,UserCollection,DefCodeCollection,TransactionIdCollection)
-         require('./routes/player_paths')(app)
-         require('./routes/requests_paths')(app)
-         require('./routes/log_paths')(app)
+        // process.on('unhandledRejection', (reason, p) => {
+        //     console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+        //     });
+        require('./routes/logRoutes')(app)
+        require('./routes/playerRoutes')(app)
+        require('./routes/requestsRoutes')(app)
+        require('./routes/transactionRoutes')(app,UserCollection,DefCodeCollection,TransactionIdCollection)
          
        
 });
 
  
  
-    // https.createServer(https_options, app).on('connection', (socket) => {
-    //     socket.setTimeout(10000);
-    // }).listen(port);
-     app.listen(port)
-    console.log("listening");
+    https.createServer(https_options, app).on('connection', (socket) => {
+        socket.setTimeout(10000);
+    }).listen(port,() => {
+        console.log("listening");
+    });
+     //app.listen(port)
  
     
 }
